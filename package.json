@@ -11,6 +11,8 @@
   "keywords": [],
   "description": "",
   "dependencies": {
-    "express": "^5.2.1"
+    "dotenv": "^18.0.3",
+    "express": "^5.2.1",
+    "mysql": "^2.18.1"
   }
 }

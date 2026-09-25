@@ -1,6 +1,13 @@
+require("dotenv").config();
 const express = require('express');
-const fs = require('fs');
 const app = express();
+const mysql = require('mysql');
+const db = mysql.createConnection({
+    host: process.env.HOST,
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+    database: process.env.DATABASE
+});
 
 app.use(express.json());
 
@@ -9,59 +16,48 @@ app.get('/', (req, res) => {
 });
 
 app.get('/todos', (req, res) => {
-    fs.readFile('todos.json', 'utf8', (err, data) => {
+    db.query('SELECT * FROM todos', (err, result) => {
         if (err) {
             console.error(err);
-            res.status(500).send('Error reading file');
+            res.status(500).send('Error reading from database');
             return;
         };
-        let todos = JSON.parse(data);
-        res.status(200).json(todos);
-    });
+        res.status(200).json(result);
+    })
 });
 
 app.post('/todos', (req, res) => {
     let todo = req.body;
-    fs.readFile('todos.json', 'utf8', (err, data) => {
+    db.query('INSERT INTO todos (title, description) VALUES (?, ?)', [todo.title, todo.description], (err, result) => {
         if (err) {
             console.error(err);
-            res.status(500).send('Error reading file');
+            res.status(500).send('Error writing to database');
             return;
         };
-        let todos = JSON.parse(data);
-        todos.push(todo);
-        fs.writeFile('todos.json', JSON.stringify(todos), (err) => {
-            if (err) {
-                console.error(err);
-                res.status(500).send('Error writing file');
-                return;
-            };
-            res.status(200).json(todos);
-        });
-    });
+        res.status(200).json(result);
+    })
 });
 
 app.delete('/todos', (req, res) => {
     let todo = req.body;
-    fs.readFile('todos.json', 'utf8', (err, data) => {
+    db.query('DELETE FROM todos WHERE id = ?', [todo.id], (err, result) => {
         if (err) {
             console.error(err);
-            res.status(500).send('Error reading file');
+            res.status(500).send('Error writing to database');
             return;
         };
-        let todos = JSON.parse(data);
-        todos = todos.filter(t => t.id !== todo.id);
-        fs.writeFile('todos.json', JSON.stringify(todos), (err) => {
-            if (err) {
-                console.error(err);
-                res.status(500).send('Error writing file');
-                return;
-            };
-            res.status(200).json(todos);
-        });
-    });
+        res.status(200).json(result);
+    })
 });
 
-app.listen(3000, () => {
-    console.log('Server is running on port 3000');
-});
+
+db.connect((err) => {
+    if (err) {
+        console.error(err);
+        return;
+    };
+    console.log('Connected to database');
+    app.listen(3000, () => {
+        console.log('Server is running on port 3000');
+    });
+})
