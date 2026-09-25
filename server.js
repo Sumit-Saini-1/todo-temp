@@ -1,43 +1,65 @@
 const express = require('express');
+const fs = require('fs');
 const app = express();
 
-let todos = [
-    {
-        id: 1,
-        task: 'hello',
-        completed: false
-    },
-    {
-        id: 2,
-        task: 'world',
-        completed: false
-    },
-    {
-        id: 3,
-        task: '!',
-        completed: false
-    }
-]
+app.use(express.json());
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
 app.get('/todos', (req, res) => {
-    res.status(200).json(todos);
+    fs.readFile('todos.json', 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error reading file');
+            return;
+        };
+        let todos = JSON.parse(data);
+        res.status(200).json(todos);
+    });
 });
 
 app.post('/todos', (req, res) => {
-    let body = req.body;
-
-    todos.push(JSON.parse(body));
-    res.status(200).json(todos);
+    let todo = req.body;
+    fs.readFile('todos.json', 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error reading file');
+            return;
+        };
+        let todos = JSON.parse(data);
+        todos.push(todo);
+        fs.writeFile('todos.json', JSON.stringify(todos), (err) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send('Error writing file');
+                return;
+            };
+            res.status(200).json(todos);
+        });
+    });
 });
 
 app.delete('/todos', (req, res) => {
-    let body = req.body;
-    todos = todos.filter(todo => todo.id !== JSON.parse(body).id);
-    res.status(200).json(todos);
+    let todo = req.body;
+    fs.readFile('todos.json', 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            res.status(500).send('Error reading file');
+            return;
+        };
+        let todos = JSON.parse(data);
+        todos = todos.filter(t => t.id !== todo.id);
+        fs.writeFile('todos.json', JSON.stringify(todos), (err) => {
+            if (err) {
+                console.error(err);
+                res.status(500).send('Error writing file');
+                return;
+            };
+            res.status(200).json(todos);
+        });
+    });
 });
 
 app.listen(3000, () => {
